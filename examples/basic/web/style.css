@@ -1,0 +1,68 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #181a1b;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #00cec9, #00b894);
+  transform: scale(1.05);
+}
+
+pre {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #202020;
+  font-family: monospace;
+  color: #00b894;
+}
+
+#plotCanvas {
+  display: block;
+  margin: 30px auto;
+  width: 100% !important;
+  max-width: 900px;   /* was 700px */
+  height: 590px !important; /* was 400px */
+  background: #111;
+  border-radius: 12px;
+  box-shadow: 0 0 14px rgba(0,0,0,0.65);
+}
+
+footer {
+  background: #222;
+  padding: 0.8rem;
+  border-top: 2px solid #444;
+}
+
+#console {
+  height: 120px;
+  overflow-y: auto;
+  background: #111;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}

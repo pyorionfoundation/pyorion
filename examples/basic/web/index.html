@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scientific Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <div class="content">
+    <h2>Scientific Computation</h2>
+    <label>Select functions:</label><br>
+    <label><input type="checkbox" class="funcCheck" value="sin"> sin(x)</label>
+    <label><input type="checkbox" class="funcCheck" value="cos"> cos(x)</label>
+    <label><input type="checkbox" class="funcCheck" value="exp"> exp(x)</label>
+    <label><input type="checkbox" class="funcCheck" value="fourier"> Fourier series</label>
+    <br>
+    <button id="btnCalc">Compute & Plot</button>
+    <pre id="calcOutput">No computation yet...</pre>
+
+    <h2>Chart</h2>
+    <canvas id="plotCanvas"></canvas>
+  </div>
+
+  <footer>
+    <h3>Log</h3>
+    <pre id="console"></pre>
+  </footer>
+</body>
+</html>

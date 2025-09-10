@@ -1,0 +1,1 @@
+pytest examples --cov --cov-report=xml --cov-report=html

@@ -1,0 +1,18 @@
+site_name: OrionFrame Documentation
+site_url: https://YellowSiC.github.io/orionframe/
+theme:
+  name: material
+
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - API Reference: api.md
+
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - toc:
+      permalink: true

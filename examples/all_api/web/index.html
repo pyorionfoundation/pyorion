@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>PyOrion Scientific Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+    }
+
+    header {
+      background: linear-gradient(to right, #1e3a8a, #3b82f6);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav {
+      background: #e5e7eb;
+      padding: 1rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    nav button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+
+    main {
+      padding: 2rem;
+    }
+
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      max-width: 500px;
+      margin: 1rem auto;
+      text-align: center;
+    }
+
+    button.action {
+      display: block;
+      width: 100%;
+      margin: 0.4rem 0;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button.action:hover {
+      background: #2563eb;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+    #status {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 0.8rem 1.2rem;
+      border-radius: 0.5rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚙️ All PyOrion APIs</h1>
+    <span>Powered by PyOrion</span>
+  </header>
+  <nav>
+    <button onclick="showPage('clipboard')">📋 Clipboard</button>
+    <button onclick="showPage('controlcenter')">🔔 ControlCenter</button>
+    <button onclick="showPage('dialog')">💬 Dialog</button>
+    <button onclick="showPage('dirs')">📂 Dirs</button>
+    <button onclick="showPage('webview')">🌐 WebView</button>
+    <button onclick="showPage('window')">🪟 Window</button>
+  </nav>
+
+  <main>
+    <!-- Clipboard -->
+    <section id="clipboard" class="page">
+      <div class="card">
+        <h2>📋 Clipboard</h2>
+        <input id="clipInput" placeholder="Text eingeben">
+        <button class="action" onclick="callAPI('📋','set_text',{text:document.getElementById('clipInput').value})">Set Text</button>
+        <button class="action" onclick="callAPI('📋','get_text')">Get Text</button>
+        <button class="action" onclick="callAPI('📋','clear')">Clear</button>
+        <button class="action" onclick="callAPI('📋','set_image')">Set Image</button>
+        <button class="action" onclick="callAPI('📋','get_image')">Get Image</button>
+        <div id="imagePreview" style="margin-top:1rem;"></div>
+      </div>
+    </section>
+
+    <!-- ControlCenter -->
+    <section id="controlcenter" class="page" style="display:none">
+      <div class="card">
+        <h2>🔔 ControlCenter</h2>
+        <input id="notifInput" placeholder="Notification Text">
+        <button class="action" onclick="callAPI('🔔','notification',{summary:document.getElementById('notifInput').value,body:'Hello from PyOrion'})">Send Notification</button>
+      </div>
+    </section>
+
+    <!-- Dialog -->
+    <section id="dialog" class="page" style="display:none">
+      <div class="card">
+        <h2>💬 Dialog</h2>
+        <button class="action" onclick="callAPI('💬','show_message',{title:'Info',message:'Das ist eine Testnachricht'})">Show Message</button>
+        <button class="action" onclick="callAPI('💬','pick_file')">Pick File</button>
+      </div>
+    </section>
+
+    <!-- Dirs -->
+    <section id="dirs" class="page" style="display:none">
+      <div class="card">
+        <h2>📂 Dirs</h2>
+        <button class="action" onclick="callAPI('📂','home_dir')">Get Home Dir</button>
+      </div>
+    </section>
+
+    <!-- WebView -->
+    <section id="webview" class="page" style="display:none">
+      <div class="card">
+        <h2>🌐 WebView</h2>
+        <button class="action" onclick="callAPI('🌐','open_devtools')">Open DevTools</button>
+        <button class="action" onclick="callAPI('🌐','close_devtools')">Close DevTools</button>
+      </div>
+    </section>
+
+    <!-- Window -->
+    <section id="window" class="page" style="display:none">
+      <div class="card">
+        <h2>🪟 Window</h2>
+        <input id="titleInput" placeholder="Fenstertitel">
+        <button class="action" onclick="callAPI('🪟','set_title',{title:document.getElementById('titleInput').value})">Set Title</button>
+        <button class="action" onclick="callAPI('🪟','get_title')">Get Title</button>
+        <button class="action" onclick="callAPI('🪟','set_fullscreen',{state:true})">Fullscreen</button>
+        <button class="action" onclick="callAPI('🪟','set_fullscreen',{state:false})">Exit Fullscreen</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="status"></div>
+
+  <script>
+    async function callAPI(prefix, cmd, args = {}) {
+      try {
+        // result ist bereits durch jsonRestoreObjectSync/Async verarbeitet
+        const result = await window.invoke(cmd, args);
+        console.log(result);
+
+        if (prefix === "📋" && cmd === "get_image" && typeof result === "string") {
+          // MIME aus dem Data-URL String extrahieren
+          const match = result.match(/^data:(.*?);base64,/);
+          const mediaType = match ? match[1] : "application/octet-stream";
+
+          showMedia(result, mediaType, "imagePreview");
+          showStatus(`${prefix} ${cmd}: Media received (${mediaType})`, "green");
+        } else {
+          showStatus(`${prefix} ${cmd}: ${JSON.stringify(result)}`, "green");
+        }
+
+        return result;
+      } catch (e) {
+        showStatus(`${prefix} Error: ${e}`, "red");
+        throw e;
+      }
+    }
+
+    function showMedia(dataUrl, mediaType, containerId = "imagePreview") {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      let el;
+      if (mediaType.startsWith("image/")) {
+        el = document.createElement("img");
+        el.src = dataUrl;
+        el.style.maxWidth = "200px";
+        el.style.borderRadius = "8px";
+      } else if (mediaType.startsWith("video/")) {
+        el = document.createElement("video");
+        el.src = dataUrl;
+        el.controls = true;
+        el.style.maxWidth = "300px";
+      } else if (mediaType.startsWith("audio/")) {
+        el = document.createElement("audio");
+        el.src = dataUrl;
+        el.controls = true;
+      } else {
+        el = document.createElement("span");
+        el.textContent = `[Unsupported type: ${mediaType}]`;
+      }
+
+      container.appendChild(el);
+    }
+
+    function showPage(pageId) {
+      // alle Seiten ausblenden
+      document.querySelectorAll(".page").forEach(sec => sec.style.display = "none");
+
+      // die gewünschte Seite anzeigen
+      const target = document.getElementById(pageId);
+      if (target) {
+        target.style.display = "block";
+      }
+    }
+
+    function showStatus(msg, color = "blue") {
+      const el = document.getElementById("status");
+      el.textContent = msg;
+      el.style.background = color;
+      el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 3000);
+    }
+  </script>
+</body>
+</html>

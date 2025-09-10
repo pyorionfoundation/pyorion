@@ -1,0 +1,21 @@
+SPDXVersion: SPDX-0.1
+DataLicense: CC0-0.1
+PackageName: pyorion
+DataFormat: SPDXRef-1
+PackageSupplier: Organization: pyorionfoundation
+PackageHomePage: https://github.com/pyorionfoundation/pyorion
+PackageLicenseDeclared: Apache-2.0
+PackageLicenseDeclared: MIT
+PackageCopyrightText: 2025-2030, pyorionfoundation
+PackageSummary: <text> PyOrion is an innovative framework designed to create extremely small and fast binary files for all major desktop platforms. Developers can seamlessly integrate any front-end framework that compiles to HTML, JavaScript, and CSS to craft engaging user interfaces. The backend operates on a Python library that provides an API for front-end communication.
+The user interface in PyOrion applications currently utilizes the [TAO](https://github.com/tauri-apps/tao) Rust library for window management, which is compatible with macOS, Windows, Linux, Android, and iOS. For rendering the application, PyOrion employs the [WRY](https://github.com/tauri-apps/wry) Rust library, which offers a unified interface to the system webviews. Specifically, it uses WKWebView on macOS and iOS, WebView2 on Windows, WebKitGTK on Linux, and the Android System WebView on Android
+The memory footprint of OrionFrame is approximately 2 MB for Mac and Windows. On Linux, some additional libraries are required, which are listed below.
+</text>
+PackageComment: <text>The package includes the following libraries; see
+Relationship information.
+</text>
+Created: 2025-08-30T20:40:06.353733+00:00
+PackageDownloadLocation: git://github.com/pyorionfoundation/pyorion
+PackageDownloadLocation: git+https://github.com/pyorionfoundation/pyorion
+PackageDownloadLocation: git+ssh://github.com/pyorionfoundation/pyorion.git
+Creator: Person: Ari Bermeki
