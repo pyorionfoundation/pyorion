@@ -1,0 +1,250 @@
+name: Release PyOrion
+env:
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            rust_target: aarch64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            rust_target: universal2-apple-darwin
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            rust_target: aarch64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.config.rust_target }}
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.10
+            3.11
+            3.12
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libasound2-dev \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libxdo-dev \
+            librsvg2-dev \
+            libglib2.0-dev \
+            pkg-config \
+            patchelf
+
+      - name: Check pkg-config for glib
+        if: runner.os == 'Linux'
+        run: pkg-config --cflags --libs glib-2.0
+
+      - name: Build Wheels (Rust+Python)
+        run: |
+          for py in 3.10 3.11 3.12; do
+            python$py -m pip install --upgrade pip maturin
+            if [[ "${{ matrix.config.rust_target }}" == "universal2-apple-darwin" ]]; then
+              python$py -m maturin build --release --out dist --strip --universal2 --interpreter python$py
+            else
+              python$py -m maturin build --release --out dist --strip --target ${{ matrix.config.rust_target }} --interpreter python$py
+            fi
+          done
+
+      - name: Upload Wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.config.rust_target }}
+          path: dist/*
+
+  manylinux:
+    runs-on: ubuntu-22.04
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build manylinux wheels (cp310-cp312)
+        run: |
+          for py in /opt/python/cp3{10,11,12}*/bin; do
+            $py/pip install --upgrade pip maturin
+            $py/maturin build --release --out dist --strip --manylinux manylinux2014
+          done
+      - name: Upload manylinux Wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-manylinux2014_x86_64
+          path: dist/*
+
+  musllinux:
+    runs-on: ubuntu-22.04
+    container:
+      image: quay.io/pypa/musllinux_1_2_x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build musllinux wheels (cp310-cp312)
+        run: |
+          for py in /opt/python/cp3{10,11,12}*/bin; do
+            $py/pip install --upgrade pip maturin
+            $py/maturin build --release --out dist --strip --manylinux musllinux_1_2
+          done
+      - name: Upload musllinux Wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-musllinux_1_2_x86_64
+          path: dist/*
+
+  publish:
+    needs: [build, manylinux, musllinux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all wheels
+        uses: actions/download-artifact@v4.1.7
+        with:
+          path: dist
+
+      - name: Publish to PyPI
+        run: maturin upload --skip-existing dist/*
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+
+
+
+
+
+--------------------
+
+name: Build Wheels Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            python-versions: "3.9 3.10 3.11 3.12 3.13"
+
+          # macOS x86_64
+          - os: macos-13
+            target: x86_64-apple-darwin
+            python-versions: "3.9 3.10 3.11 3.12 3.13"
+
+          # Windows x86_64
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            python-versions: "3.9 3.10 3.11 3.12 3.13"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Linux system dependencies
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libasound2-dev \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libxdo-dev \
+            librsvg2-dev \
+            libglib2.0-dev \
+            pkg-config \
+            patchelf
+
+      - name: Check pkg-config for glib
+        if: runner.os == 'Linux'
+        run: pkg-config --cflags --libs glib-2.0
+
+      # Setup Rust
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      # Setup Python (uv)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      # Build wheels for multiple interpreters
+      - name: Build Wheels
+        run: |
+          for py in ${{ matrix.python-versions }}; do
+            uv run --python $py maturin build \
+              --release \
+              --out dist \
+              --strip \
+              --target ${{ matrix.target }} \
+              --interpreter python$py
+          done
+
+      # Pack wheels into a single zip per target
+      - name: Archive wheels
+        run: |
+          mkdir -p assets
+          zip -j assets/wheels-${{ matrix.target }}.zip dist/*
+
+      # Upload to artifacts (workflow storage)
+      - name: Upload wheels artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: assets/wheels-${{ matrix.target }}.zip
+
+      # Upload to GitHub Release
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          gh release upload "${GITHUB_REF#refs/tags/}" \
+            assets/wheels-${{ matrix.target }}.zip \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
